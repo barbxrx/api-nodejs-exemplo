@@ -1,0 +1,590 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model aluno_certificado {
+  aluno_certificado_id Int      @id @default(autoincrement()) @db.UnsignedInt
+  aluno_id             Int
+  curso_info_id        Int
+  created_at           DateTime @default(now()) @db.Timestamp(0)
+}
+
+model assinatura {
+  assinatura_id                                 Int                  @id @default(autoincrement())
+  assinatura_status                             Int
+  assinatura_plano                              Int
+  assinatura_acesso_interno                     Int?
+  assinatura_cancelamento_solicitacao_data      DateTime?            @db.DateTime(0)
+  assinatura_cancelamento_conclusao_data        DateTime?            @db.DateTime(0)
+  assinatura_ativa_data_inicio                  DateTime?            @db.DateTime(0)
+  parcela_ultima_data                           DateTime?            @db.DateTime(0)
+  assinatura_data_created                       DateTime             @default(now()) @db.Timestamp(0)
+  assinatura_data_updated                       DateTime             @default(now()) @db.Timestamp(0)
+  parcela_ultima_pagarme_id                     Int?
+  assinatura_pagarme_id                         Int?
+  empresa_id                                    Int
+  plano_id                                      Int?                 @default(1) @db.UnsignedInt
+  empresa                                       empresa              @relation(fields: [empresa_id], references: [empresa_id], onDelete: NoAction, onUpdate: NoAction, map: "assinatura_empresa_id_fk")
+  assinatura_plano_assinaturaToassinatura_plano assinatura_plano?    @relation(fields: [plano_id], references: [plano_id], onDelete: NoAction, onUpdate: NoAction, map: "assinatura_plano_id_fk")
+  assinatura_evento                             assinatura_evento[]
+  assinatura_parcela                            assinatura_parcela[]
+
+  @@index([empresa_id], map: "assinatura_empresa_id_fk")
+  @@index([plano_id], map: "assinatura_plano_id_fk")
+}
+
+model assinatura_evento {
+  evento_id                  Int        @id @default(autoincrement())
+  assinatura_id              Int
+  assinatura_status_anterior Int
+  assinatura_status_atual    Int
+  evento_data_created        DateTime   @default(now()) @db.DateTime(0)
+  evento_data_updated        DateTime   @default(now()) @db.DateTime(0)
+  assinatura                 assinatura @relation(fields: [assinatura_id], references: [assinatura_id], onDelete: NoAction, onUpdate: NoAction, map: "assinatura_evento_fk")
+
+  @@index([assinatura_id], map: "assinatura_evento_fk")
+}
+
+model assinatura_parcela {
+  parcela_id                 Int        @id @default(autoincrement())
+  assinatura_id              Int
+  parcela_valor              Float
+  parcela_status             Int
+  parcela_pagarme_id         Int?
+  parcela_data_created       DateTime   @default(now()) @db.Timestamp(0)
+  parcela_data_updated       DateTime   @default(now()) @db.Timestamp(0)
+  empresa_id                 Int
+  parcela_usuario_quantidade Int?
+  parcela_data_vencimento    DateTime?  @db.Date
+  parcela_nota_fiscal_url    String?    @db.VarChar(255)
+  parcela_boleto_url         String?    @db.VarChar(255)
+  assinatura                 assinatura @relation(fields: [assinatura_id], references: [assinatura_id], onDelete: NoAction, onUpdate: NoAction, map: "assinatura_id_fk")
+  empresa                    empresa    @relation(fields: [empresa_id], references: [empresa_id], onDelete: NoAction, onUpdate: NoAction, map: "assinatura2_empresa_id_fk")
+
+  @@index([empresa_id], map: "assinatura2_empresa_id_fk")
+  @@index([assinatura_id], map: "assinatura_id_fk")
+}
+
+model assinatura_plano {
+  plano_id                Int          @id @default(autoincrement()) @db.UnsignedInt
+  plano_funcionario_valor Float?       @db.Float
+  plano_data_created      DateTime     @default(now()) @db.Timestamp(0)
+  plano_data_updated      DateTime     @default(now()) @db.Timestamp(0)
+  assinatura              assinatura[]
+}
+
+model avd_avaliacao {
+  avd_avaliacao_id               Int                         @id @default(autoincrement()) @db.UnsignedInt
+  funcionario_id                 Int
+  avd_avaliacao_comentarios      String?                     @db.VarChar(255)
+  avd_avaliacao_nota_competencia Int?
+  avd_avaliacao_nota_indicador   Int?
+  avd_avaliacao_ninebox          Int?
+  avd_avaliacao_data_created     DateTime?                   @default(now()) @db.DateTime(0)
+  avd_avaliacao_data_update      DateTime?                   @default(now()) @db.DateTime(0)
+  gestor_id                      Int?
+  funcionario                    funcionario                 @relation(fields: [funcionario_id], references: [funcionario_id], onDelete: NoAction, onUpdate: NoAction, map: "avd_avaliacao_funcionario_id_fk")
+  avd_avaliacao_competencia      avd_avaliacao_competencia[]
+  avd_avaliacao_indicador        avd_avaliacao_indicador[]
+
+  @@index([funcionario_id], map: "avd_avaliacao_funcionario_id_fk")
+}
+
+model avd_avaliacao_competencia {
+  avd_avaliacao_competencia_id           Int              @id @default(autoincrement()) @db.UnsignedInt
+  avd_avaliacao_competencia_nota         Int
+  avd_avaliacao_id                       Int?             @db.UnsignedInt
+  avd_competencia_id                     Int?             @db.UnsignedInt
+  avd_avaliacao_competencia_data_created DateTime?        @default(now()) @db.DateTime(0)
+  avd_avaliacao_competencia_data_update  DateTime?        @default(now()) @db.DateTime(0)
+  avd_avaliacao                          avd_avaliacao?   @relation(fields: [avd_avaliacao_id], references: [avd_avaliacao_id], onDelete: NoAction, onUpdate: NoAction, map: "avd_avaliacao_competencia_avaliacao_id_fk")
+  avd_competencia                        avd_competencia? @relation(fields: [avd_competencia_id], references: [avd_competencia_id], onDelete: NoAction, onUpdate: NoAction, map: "avd_avaliacao_competencia_avaliacao_competencia_fk")
+
+  @@index([avd_competencia_id], map: "avd_avaliacao_competencia_avaliacao_competencia_fk")
+  @@index([avd_avaliacao_id], map: "avd_avaliacao_competencia_avaliacao_id_fk")
+}
+
+model avd_avaliacao_indicador {
+  avd_avaliacao_indicador_id           Int           @id @default(autoincrement()) @db.UnsignedInt
+  avd_avaliacao_indicador_nota         Int
+  avd_avaliacao_id                     Int           @db.UnsignedInt
+  avd_indicador_id                     Int           @db.UnsignedInt
+  avd_avaliacao_indicador_data_created DateTime?     @default(now()) @db.DateTime(0)
+  avd_avaliacao_indicador_data_updated DateTime?     @default(now()) @db.DateTime(0)
+  avd_avaliacao                        avd_avaliacao @relation(fields: [avd_avaliacao_id], references: [avd_avaliacao_id], onDelete: NoAction, onUpdate: NoAction, map: "avd_avaliacao_fk")
+  avd_indicador                        avd_indicador @relation(fields: [avd_indicador_id], references: [avd_indicador_id], onDelete: NoAction, onUpdate: NoAction, map: "avd_avaliacao_indicador_fk")
+
+  @@index([avd_avaliacao_id], map: "avd_avaliacao_fk")
+  @@index([avd_indicador_id], map: "avd_avaliacao_indicador_fk")
+}
+
+model avd_competencia {
+  avd_competencia_id                   Int                         @id @default(autoincrement()) @db.UnsignedInt
+  avd_competencia_nome                 String?                     @db.VarChar(255)
+  avd_competencia_criterio_avaliacao   String?                     @db.VarChar(255)
+  avd_competencia_peso                 Int?
+  cargo_id                             Int?
+  avd_competencia_data_created         DateTime?                   @default(now()) @db.DateTime(0)
+  column_7avd_competencia_data_updated DateTime?                   @default(now()) @db.DateTime(0)
+  cargo                                cargo?                      @relation(fields: [cargo_id], references: [cargo_id], onDelete: NoAction, onUpdate: NoAction, map: "avd_competencia_cargo_id_fk")
+  avd_avaliacao_competencia            avd_avaliacao_competencia[]
+
+  @@index([cargo_id], map: "avd_competencia_cargo_id_fk")
+}
+
+model avd_indicador {
+  avd_indicador_id           Int                       @id @default(autoincrement()) @db.UnsignedInt
+  avd_indicador_nome         String                    @db.VarChar(255)
+  avd_indicador_meta         Int?
+  avd_indicador_meta_tipo    String?                   @db.VarChar(255)
+  cargo_id                   Int?
+  avd_indicador_data_created DateTime?                 @default(now()) @db.DateTime(0)
+  avd_indicador_data_updated DateTime?                 @default(now()) @db.DateTime(0)
+  cargo                      cargo?                    @relation(fields: [cargo_id], references: [cargo_id], onUpdate: SetNull, map: "avd_indicador_cargo_id_fk")
+  avd_avaliacao_indicador    avd_avaliacao_indicador[]
+
+  @@index([cargo_id], map: "avd_indicador_cargo_id_fk")
+}
+
+model cadastro {
+  cadastro_id                             Int      @id @default(autoincrement())
+  cadastro_funcionario_nome               String?  @db.Text
+  cadastro_funcionario_email              String?  @db.Text
+  cadastro_funcionario_senha              String?  @db.Text
+  cadastro_empresa_nome                   String?  @db.Text
+  cadastro_empresa_funcionario_quantidade String?  @db.Text
+  cadastro_email_url                      String?  @db.Text
+  cadastro_email_url_aberto               Int?
+  cadastro_data_created                   DateTime @default(now()) @db.Timestamp(0)
+  cadastro_data_updated                   DateTime @default(now()) @db.Timestamp(0)
+  cadastro_empresa_setor                  String?  @db.Text
+  cadastro_funcionario_cargo              String?  @db.Text
+  cadastro_funcionario_area               String?  @db.Text
+  cadastro_funcionario_telefone           String?  @db.Text
+}
+
+model cargo {
+  cargo_id                Int                       @id @default(autoincrement())
+  cargo_titulo            String                    @db.Text
+  empresa_id              Int
+  cargo_data_created      DateTime                  @default(now()) @db.DateTime(0)
+  cargo_data_updated      DateTime                  @default(now()) @db.DateTime(0)
+  empresa                 empresa                   @relation(fields: [empresa_id], references: [empresa_id], onDelete: NoAction, onUpdate: NoAction, map: "cargo_empresa_id_fk")
+  avd_competencia         avd_competencia[]
+  avd_indicador           avd_indicador[]
+  funcionario_cargo       funcionario_cargo[]
+  funcionario_cargo_lider funcionario_cargo_lider[]
+
+  @@index([empresa_id], map: "cargo_empresa_id_fk")
+}
+
+model conteudo {
+  conteudo_id                Int                 @id @default(autoincrement()) @db.UnsignedInt
+  conteudo_titulo            String?             @db.Text
+  conteudo_descricao         String?             @db.Text
+  conteudo_ordem             Int?
+  conteudo_data_created      DateTime?           @default(now()) @db.DateTime(0)
+  conteudo_data_updated      DateTime?           @default(now()) @db.DateTime(0)
+  conteudo_duracao           Int?
+  conteudo_texto             String?             @db.Text
+  conteudo_url               String?             @db.Text
+  conteudo_material_url      String?             @db.Text
+  conteudo_nota_minima       Int?
+  conteudo_certificado_final Int?
+  modulo_id                  Int?                @db.UnsignedInt
+  categoria_id               Int?                @db.UnsignedInt
+  conteudo_token             String?             @db.Text
+  conteudo_categoria         conteudo_categoria? @relation(fields: [categoria_id], references: [categoria_id], onDelete: NoAction, onUpdate: NoAction, map: "conteudo_categoria_id_fk")
+  modulo                     modulo?             @relation(fields: [modulo_id], references: [modulo_id], onDelete: NoAction, onUpdate: NoAction, map: "conteudo_modulo_id_fk")
+  conteudo_questao           conteudo_questao[]
+
+  @@index([categoria_id], map: "conteudo_categoria_id_fk")
+  @@index([modulo_id], map: "conteudo_modulo_id_fk")
+}
+
+model conteudo_alternativa {
+  alternativa_id           Int               @id @default(autoincrement()) @db.UnsignedInt
+  alternativa_titulo       String?           @db.Text
+  alternativa_ordem        Int?
+  questao_id               Int?              @db.UnsignedInt
+  alternativa_data_created DateTime?         @default(now()) @db.DateTime(0)
+  alternativa_data_updated DateTime?         @default(now()) @db.DateTime(0)
+  alternativa_correta      Int?
+  conteudo_questao         conteudo_questao? @relation(fields: [questao_id], references: [questao_id], onDelete: NoAction, onUpdate: NoAction, map: "conteudo_alternativa_questao_fk")
+
+  @@index([questao_id], map: "conteudo_alternativa_questao_fk")
+}
+
+model conteudo_categoria {
+  categoria_id     Int        @id @default(autoincrement()) @db.UnsignedInt
+  categoria_titulo String?    @db.Text
+  categoria_icone  Int?
+  conteudo         conteudo[]
+}
+
+model conteudo_questao {
+  questao_id           Int                    @id @default(autoincrement()) @db.UnsignedInt
+  questao_titulo       String?                @db.Text
+  conteudo_id          Int?                   @db.UnsignedInt
+  questao_data_created DateTime?              @default(now()) @db.DateTime(0)
+  questao_data_updated DateTime?              @default(now()) @db.DateTime(0)
+  conteudo             conteudo?              @relation(fields: [conteudo_id], references: [conteudo_id], onDelete: NoAction, onUpdate: NoAction, map: "conteudo_questao_conteudo_id_fk")
+  conteudo_alternativa conteudo_alternativa[]
+
+  @@index([conteudo_id], map: "conteudo_questao_conteudo_id_fk")
+}
+
+model curso_favorito {
+  favorito_id           Int         @id @default(autoincrement()) @db.UnsignedInt
+  funcionario_id        Int
+  curso_id              Int
+  favorito_data_created DateTime?   @default(now()) @db.DateTime(0)
+  favorito_data_updated DateTime?   @default(now()) @db.DateTime(0)
+  funcionario           funcionario @relation(fields: [funcionario_id], references: [funcionario_id], onDelete: NoAction, onUpdate: NoAction, map: "curso_favorito_funcionario_id_fk")
+
+  @@index([funcionario_id], map: "curso_favorito_funcionario_id_fk")
+}
+
+model curso_info {
+  curso_info_id        Int                  @id @default(autoincrement()) @db.UnsignedInt
+  curso_nome           String?              @db.Text
+  curso_descricao      String?              @db.Text
+  curso_carga_horaria  Int?
+  empresa_id           Int?
+  funcionario_id       Int?
+  foto_url             String?              @db.Text
+  curso_data_created   DateTime?            @default(now()) @db.DateTime(0)
+  curso_data_updated   DateTime?            @default(now()) @db.DateTime(0)
+  curso_acesso         Int?                 @default(0)
+  lms_curso_id         Int?
+  curso_data_publicado DateTime?            @db.DateTime(0)
+  curso_status         Int?                 @default(1)
+  curso_path           String?              @db.Text
+  empresa              empresa?             @relation(fields: [empresa_id], references: [empresa_id], onUpdate: SetNull, map: "curso_info_empresa_id_fk")
+  funcionario          funcionario?         @relation(fields: [funcionario_id], references: [funcionario_id], onUpdate: SetNull, map: "curso_info_funcionario_id_fk")
+  curso_moderador      curso_moderador[]
+  curso_visualizacao   curso_visualizacao[]
+  modulo               modulo[]
+
+  @@index([empresa_id], map: "curso_info_empresa_id_fk")
+  @@index([funcionario_id], map: "curso_info_funcionario_id_fk")
+}
+
+model curso_moderador {
+  curso_moderador_id Int          @id @default(autoincrement()) @db.UnsignedInt
+  funcionario_id     Int?
+  curso_info_id      Int?         @db.UnsignedInt
+  curso_data_created DateTime?    @default(now()) @db.DateTime(0)
+  curso_data_updated DateTime?    @default(now()) @db.DateTime(0)
+  curso_info         curso_info?  @relation(fields: [curso_info_id], references: [curso_info_id], onDelete: NoAction, onUpdate: NoAction, map: "curso_moderador_curso_info_id_fk")
+  funcionario        funcionario? @relation(fields: [funcionario_id], references: [funcionario_id], onDelete: NoAction, onUpdate: NoAction, map: "curso_moderador_funcionariod_id_fk")
+
+  @@unique([funcionario_id, curso_info_id], map: "curso_moderador_index_2")
+  @@index([curso_info_id], map: "curso_moderador_curso_info_id_fk")
+}
+
+model curso_modificacao_log {
+  curso_modificacao_log_id Int          @id @default(autoincrement()) @db.UnsignedInt
+  funcionario_id           Int?
+  tabela_modificada        String?      @db.Text
+  id_modificado            Int?
+  operacao_realizada       String?      @db.Text
+  data                     DateTime?    @default(now()) @db.DateTime(0)
+  funcionario              funcionario? @relation(fields: [funcionario_id], references: [funcionario_id], onDelete: NoAction, onUpdate: NoAction, map: "curso_modificacao_log_funcionario_id_fk")
+
+  @@index([funcionario_id], map: "curso_modificacao_log_funcionario_id_fk")
+}
+
+model curso_visualizacao {
+  curso_visualizacao_id Int          @id @default(autoincrement()) @db.UnsignedInt
+  funcionario_id        Int?
+  curso_info_id         Int?         @db.UnsignedInt
+  curso_data_created    DateTime?    @default(now()) @db.DateTime(0)
+  curso_data_updated    DateTime?    @default(now()) @db.DateTime(0)
+  curso_info            curso_info?  @relation(fields: [curso_info_id], references: [curso_info_id], onDelete: NoAction, onUpdate: NoAction, map: "curso_visualizacao_curso_info_id_fk")
+  funcionario           funcionario? @relation(fields: [funcionario_id], references: [funcionario_id], onDelete: NoAction, onUpdate: NoAction, map: "curso_visualizacao_funcionario_id_fk")
+
+  @@unique([funcionario_id, curso_info_id], map: "curso_visualizacao_index_2")
+  @@index([curso_info_id], map: "curso_visualizacao_curso_info_id_fk")
+}
+
+model empresa {
+  empresa_id                     Int                  @id @default(autoincrement())
+  empresa_nome                   String               @db.Text
+  empresa_setor                  String?              @db.Text
+  empresa_funcionario_quantidade String?              @db.Text
+  empresa_url                    String?              @db.Text
+  empresa_data_created           DateTime             @default(now()) @db.Timestamp(0)
+  empresa_data_updated           DateTime             @default(now()) @db.Timestamp(0)
+  empresa_razao_social           String?              @db.Text
+  empresa_cnpj                   String?              @db.Text
+  empresa_cep                    String?              @db.Text
+  empresa_numero                 Int?
+  empresa_complemento            String?              @db.Text
+  empresa_endereco               String?              @db.Text
+  empresa_bairro                 String?              @db.Text
+  empresa_cidade                 String?              @db.Text
+  empresa_estado                 String?              @db.Text
+  assinatura                     assinatura[]
+  assinatura_parcela             assinatura_parcela[]
+  cargo                          cargo[]
+  curso_info                     curso_info[]
+  funcionario                    funcionario[]
+  funcionario_cargo              funcionario_cargo[]
+  time                           time[]
+  trilha                         trilha[]
+}
+
+model funcionario {
+  funcionario_id                      Int                                   @id @default(autoincrement())
+  funcionario_permissao               Int                                   @default(0)
+  funcionario_data_created            DateTime                              @default(now()) @db.Timestamp(0)
+  funcionario_data_update             DateTime                              @default(now()) @db.Timestamp(0)
+  aluno_id                            Int?
+  empresa_id                          Int
+  funcionario_senha                   String?                               @db.Text
+  funcionario_email                   String                                @db.Text
+  funcionario_nome                    String                                @db.Text
+  funcionario_cpf                     String?                               @db.Text
+  funcionario_cargo_id                Int?
+  funcionario_telefone                String?                               @db.Text
+  funcionario_status                  Int                                   @default(0)
+  empresa                             empresa                               @relation(fields: [empresa_id], references: [empresa_id], onDelete: NoAction, onUpdate: NoAction, map: "funcionario_empresa_id_fk")
+  avd_avaliacao                       avd_avaliacao[]
+  curso_favorito                      curso_favorito[]
+  curso_info                          curso_info[]
+  curso_moderador                     curso_moderador[]
+  curso_modificacao_log               curso_modificacao_log[]
+  curso_visualizacao                  curso_visualizacao[]
+  funcionario_acesso_log              funcionario_acesso_log[]
+  funcionario_cargo                   funcionario_cargo[]
+  funcionario_cargo_lider             funcionario_cargo_lider[]
+  funcionario_curso_acesso            funcionario_curso_acesso[]
+  funcionario_senha_reset_solicitacao funcionario_senha_reset_solicitacao[]
+  passo_progresso                     passo_progresso[]
+
+  @@index([empresa_id], map: "funcionario_empresa_id_fk")
+}
+
+model funcionario_acesso_log {
+  log_id           Int         @id @default(autoincrement())
+  log_endereco_ip  String      @db.Text
+  funcionario_id   Int
+  log_data_created DateTime    @db.DateTime(0)
+  log_data_updated DateTime    @default(now()) @db.DateTime(0)
+  funcionario      funcionario @relation(fields: [funcionario_id], references: [funcionario_id], onDelete: NoAction, onUpdate: NoAction, map: "funcionario_acesso_log_funcionario_id_fk")
+
+  @@index([funcionario_id], map: "funcionario_acesso_log_funcionario_id_fk")
+}
+
+model funcionario_cargo {
+  funcionario_cargo_id           Int          @id @default(autoincrement())
+  funcionario_id                 Int?
+  cargo_titulo                   String?      @db.VarChar(45)
+  funcionario_cargo_data_created DateTime     @default(now()) @db.Timestamp(0)
+  funcionario_cargo_data_updated DateTime     @default(now()) @db.Timestamp(0)
+  empresa_id                     Int?
+  time_id                        Int?
+  funcionario_lider_id           Int?
+  cargo_id                       Int?
+  cargo                          cargo?       @relation(fields: [cargo_id], references: [cargo_id], onUpdate: SetNull, map: "funcionario_cargo_cargo_id")
+  empresa                        empresa?     @relation(fields: [empresa_id], references: [empresa_id], onUpdate: SetNull, map: "funcionario_cargo_empresa_id_fk")
+  funcionario                    funcionario? @relation(fields: [funcionario_id], references: [funcionario_id], onDelete: NoAction, onUpdate: NoAction, map: "funcionario_cargo_funcionario_id_fk")
+
+  @@index([cargo_id], map: "funcionario_cargo_cargo_id")
+  @@index([empresa_id], map: "funcionario_cargo_empresa_id_fk")
+  @@index([funcionario_id], map: "funcionario_cargo_funcionario_id_fk")
+}
+
+model funcionario_cargo_lider {
+  funcionario_cargo_lider_id Int         @id @default(autoincrement())
+  funcionario_id             Int
+  funcionario_lider_id       Int
+  cargo_id                   Int
+  cargo                      cargo       @relation(fields: [cargo_id], references: [cargo_id], onDelete: NoAction, onUpdate: NoAction, map: "funcionario_cargo_lider_cargo_id_fk")
+  funcionario                funcionario @relation(fields: [funcionario_id], references: [funcionario_id], onDelete: NoAction, onUpdate: NoAction, map: "funcionario_cargo_lider_funcionario_id_fk")
+
+  @@index([cargo_id], map: "funcionario_cargo_lider_cargo_id_fk")
+  @@index([funcionario_id], map: "funcionario_cargo_lider_funcionario_id_fk")
+}
+
+model funcionario_curso_acesso {
+  acesso_id           Int         @id @default(autoincrement())
+  curso_id            Int
+  funcionario_id      Int
+  acesso_data_created DateTime    @db.DateTime(0)
+  acesso_data_updated DateTime    @default(now()) @db.DateTime(0)
+  funcionario         funcionario @relation(fields: [funcionario_id], references: [funcionario_id], onDelete: NoAction, onUpdate: NoAction, map: "funcionario_curso_funcionario_id")
+
+  @@index([funcionario_id], map: "funcionario_curso_funcionario_id")
+}
+
+model funcionario_senha_reset_solicitacao {
+  solicitacao_id           Int         @id @default(autoincrement()) @db.UnsignedInt
+  funcionario_id           Int
+  solicitacao_token        String      @db.Text
+  solicitacao_status       Int?
+  solicitacao_data_created DateTime?   @default(now()) @db.DateTime(0)
+  solicitacao_updated      DateTime?   @default(now()) @db.DateTime(0)
+  funcionario              funcionario @relation(fields: [funcionario_id], references: [funcionario_id], onDelete: NoAction, onUpdate: NoAction, map: "funcionario_senha_reset_solicitacao_funcionario_id_fk")
+
+  @@index([funcionario_id], map: "funcionario_senha_reset_solicitacao_funcionario_id_fk")
+}
+
+model funcionario_time_log {
+  time_log_id      Int      @id @default(autoincrement()) @db.UnsignedInt
+  funcionario_id   Int?
+  path             String?  @db.Text
+  log_data_created DateTime @default(now()) @db.Timestamp(0)
+  log_data_updated DateTime @default(now()) @db.Timestamp(0)
+}
+
+model migrations {
+  id        Int    @id @default(autoincrement())
+  timestamp BigInt
+  name      String @db.VarChar(255)
+}
+
+model modulo {
+  modulo_id           Int         @id @default(autoincrement()) @db.UnsignedInt
+  modulo_nome         String?     @db.Text
+  curso_info_id       Int?        @db.UnsignedInt
+  modulo_data_created DateTime?   @default(now()) @db.DateTime(0)
+  modulo_data_updated DateTime?   @default(now()) @db.DateTime(0)
+  modulo_ordem        Int?
+  curso_info          curso_info? @relation(fields: [curso_info_id], references: [curso_info_id], onDelete: NoAction, onUpdate: NoAction, map: "modulo_curso_info_id")
+  conteudo            conteudo[]
+
+  @@index([curso_info_id], map: "modulo_curso_info_id")
+}
+
+model notificacao {
+  notificacao_id           Int      @id @default(autoincrement()) @db.UnsignedInt
+  notificacao_texto        String   @db.Text
+  notificacao_status       Int
+  funcionario_id           Int
+  notificacao_data_created DateTime @default(now()) @db.Timestamp(0)
+  notificacao_data_updated DateTime @default(now()) @db.Timestamp(0)
+  notificacao_url          String?  @db.VarChar(255)
+  gestor_id                Int?
+}
+
+model passo_progresso {
+  progresso_id           Int         @id @default(autoincrement()) @db.UnsignedInt
+  progresso_status       Int
+  progresso_url          String?     @db.Text
+  passo_id               Int?        @db.UnsignedInt
+  funcionario_id         Int
+  progresso_data_created DateTime    @default(now()) @db.Timestamp(0)
+  progresso_data_updated DateTime    @default(now()) @db.Timestamp(0)
+  progresso_feedback     String?     @db.Text
+  funcionario            funcionario @relation(fields: [funcionario_id], references: [funcionario_id], onDelete: NoAction, onUpdate: NoAction, map: "passo_progresso_funcionario_id_fk")
+
+  @@index([passo_id], map: "passo_progresso_index_3")
+  @@index([funcionario_id], map: "passo_progresso_index_4")
+}
+
+model ponto_melhoria {
+  melhoria_id           Int      @id @default(autoincrement())
+  melhoria_texto        String   @db.Text
+  registro_id           Int      @db.UnsignedInt
+  melhoria_data_created DateTime @default(now()) @db.Timestamp(0)
+  melhoria_data_updated DateTime @default(now()) @db.Timestamp(0)
+}
+
+model ponto_positivo {
+  positivo_id           Int      @id @default(autoincrement())
+  positivo_texto        String   @db.Text
+  registro_id           Int
+  positivo_data_created DateTime @default(now()) @db.Timestamp(0)
+  positivo_data_updated DateTime @default(now()) @db.Timestamp(0)
+}
+
+model profissao {
+  id               Int      @id @default(autoincrement()) @db.UnsignedInt
+  created_at       DateTime @default(now()) @db.Timestamp(0)
+  profissao_titulo String?  @db.VarChar(255)
+}
+
+model reuniao_feedback {
+  feedback_id                 Int      @id @default(autoincrement()) @db.UnsignedInt
+  feedback_gestor_expectativa Int
+  feedback_reuniao_avaliacao  Int
+  feedback_reuniao_comentario String?  @db.MediumText
+  registro_id                 Int      @unique(map: "registro_id")
+  feedback_date_created       DateTime @default(now()) @db.Timestamp(0)
+  feedback_date_updated       DateTime @default(now()) @db.Timestamp(0)
+}
+
+model reuniao_registro {
+  registro_id                          Int      @id @default(autoincrement()) @db.UnsignedInt
+  funcionario_id                       Int
+  gestor_id                            Int
+  colaborador_expectativa              Int?
+  colaborador_habilidade_tecnica       Int?
+  colaborador_habilidade_comportamento Int?
+  colaborador_comentario               String?  @db.MediumText
+  colaborador_alerta_performance       Boolean?
+  colaborador_alerta_promocao          Boolean?
+  colaborador_alerta_desligamento      Boolean?
+  registro_data_created                DateTime @default(now()) @db.Timestamp(0)
+  registro_data_updated                DateTime @default(now()) @db.Timestamp(0)
+}
+
+model time {
+  time_id           Int      @id @default(autoincrement())
+  time_titulo       String   @db.Text
+  empresa_id        Int
+  time_data_created DateTime @default(now()) @db.Timestamp(0)
+  time_data_updated DateTime @default(now()) @db.Timestamp(0)
+  empresa           empresa  @relation(fields: [empresa_id], references: [empresa_id], onDelete: NoAction, onUpdate: NoAction, map: "time_relation_empresa_id_fk")
+
+  @@index([empresa_id], map: "time_relation_empresa_id_fk")
+}
+
+model trilha {
+  trilha_id                   Int            @id @default(autoincrement()) @db.UnsignedInt
+  trilha_nome                 String         @db.Text
+  trilha_descricao            String         @db.Text
+  trilha_tipo                 Int?
+  trilha_prazo_conclusao_dias Int
+  trilha_data_created         DateTime       @default(now()) @db.Timestamp(0)
+  trilha_data_updated         DateTime       @default(now()) @db.Timestamp(0)
+  trilha_padrao               Int?
+  empresa_id                  Int?
+  trilha_oculta               Boolean        @default(false)
+  empresa                     empresa?       @relation(fields: [empresa_id], references: [empresa_id], onDelete: NoAction, onUpdate: NoAction, map: "trilha_empresa_id_fk")
+  trilha_passo                trilha_passo[]
+
+  @@index([empresa_id], map: "trilha_empresa_id_fk")
+}
+
+model trilha_acesso {
+  acesso_id           Int      @id @default(autoincrement()) @db.UnsignedInt
+  acesso_status       Int
+  funcionario_id      Int
+  trilha_id           Int      @db.UnsignedInt
+  acesso_data_created DateTime @default(now()) @db.Timestamp(0)
+  acesso_data_updated DateTime @default(now()) @db.Timestamp(0)
+}
+
+model trilha_passo {
+  passo_id           Int      @id @default(autoincrement()) @db.UnsignedInt
+  passo_titulo       String?  @db.Text
+  passo_descricao    String?  @db.Text
+  passo_tipo         Int?
+  passo_ordem        Int?
+  passo_url          String?  @db.Text
+  curso_id           Int?
+  trilha_id          Int?     @db.UnsignedInt
+  passo_data_created DateTime @default(now()) @db.Timestamp(0)
+  passo_data_updated DateTime @default(now()) @db.Timestamp(0)
+  trilha             trilha?  @relation(fields: [trilha_id], references: [trilha_id], onDelete: NoAction, onUpdate: NoAction, map: "trilha_passo_trilha_id_fk")
+
+  @@index([trilha_id], map: "trilha_passo_trilha_id_fk")
+}
